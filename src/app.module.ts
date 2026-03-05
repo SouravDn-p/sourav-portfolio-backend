@@ -13,6 +13,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CloudinaryModule } from './services/cloudinary/cloudinary.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { TodoModule } from './modules/todo/todo.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
     UsersModule,
     CloudinaryModule,
     ProjectsModule,
+    TodoModule,
   ],
   controllers: [AppController],
   providers: [
