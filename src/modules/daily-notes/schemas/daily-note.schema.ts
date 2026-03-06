@@ -12,7 +12,6 @@
 // - wordCount computed on save for analytics
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { NextFunction } from 'express';
 import { HydratedDocument } from 'mongoose';
 
 export type DailyNoteDocument = HydratedDocument<DailyNote>;
@@ -128,9 +127,8 @@ DailyNoteSchema.index({ userId: 1, tags: 1 });
 DailyNoteSchema.index({ userId: 1, mood: 1 });
 
 // Auto-calculate wordCount before saving
-DailyNoteSchema.pre<DailyNoteDocument>('save', function (next: NextFunction) {
+DailyNoteSchema.pre<DailyNoteDocument>('save', function () {
   if (this.content) {
     this.wordCount = this.content.trim().split(/\s+/).filter(Boolean).length;
   }
-  next();
 });

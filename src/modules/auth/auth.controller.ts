@@ -27,8 +27,6 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { imageMulterOptions } from 'src/config/multer.config';
-import { UserRole } from '../users/schemas/user.schema';
-import { Roles } from 'src/common/decorators/roles.decorator';
 
 const ACCESS_MAX_AGE = 15 * 60 * 1000;
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
