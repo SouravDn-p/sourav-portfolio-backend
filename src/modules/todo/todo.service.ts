@@ -145,7 +145,7 @@ export class TodoService {
 
     // Normalize dueDate if changed
     if (dto.dueDate) {
-      updateData.dueDate = this.normalizeDate(dto.dueDate as string);
+      updateData.dueDate = this.normalizeDate(dto.dueDate);
     }
 
     // Auto-set completedAt when status switches to COMPLETED
@@ -219,7 +219,7 @@ export class TodoService {
         status: { $nin: [TodoStatus.COMPLETED, TodoStatus.CANCELLED] },
       }),
       this.todoModel
-        .find({ userId, status: TodoStatus.COMPLETED })
+        .find({ userId, status: TodoStatus.PENDING })
         .sort({ completedAt: -1 })
         .limit(5)
         .lean()
@@ -282,7 +282,6 @@ export class TodoService {
     };
   }
 
-  // ─── CALENDAR: DAILY VIEW ─────────────────────────────────────────────────
   // Returns all todos for a specific day with summary stats
   async getDailyView(
     userId: string,
@@ -308,8 +307,6 @@ export class TodoService {
     };
   }
 
-  // ─── CALENDAR: WEEKLY VIEW ────────────────────────────────────────────────
-  // Returns 7 days of todos. weekOf = any date in that week (Mon–Sun)
   async getWeeklyView(
     userId: string,
     query: CalendarQueryDto,
@@ -328,7 +325,6 @@ export class TodoService {
     // Group by day
     const days = this.buildWeekDays(weekStart, todos as TodoDocument[]);
 
-    // const allTodos = days.flatMap((d) => d.todos);
     const summary = this.buildWeekSummary(days);
 
     return {
@@ -339,8 +335,6 @@ export class TodoService {
     };
   }
 
-  // ─── CALENDAR: MONTHLY VIEW ────────────────────────────────────────────────
-  // Returns all days in a month — optimized for calendar grid rendering
   async getMonthlyView(
     userId: string,
     query: CalendarQueryDto,
@@ -350,7 +344,7 @@ export class TodoService {
     const month = query.month ?? now.getUTCMonth() + 1;
 
     const monthStart = new Date(Date.UTC(year, month - 1, 1));
-    const monthEnd = new Date(Date.UTC(year, month, 1)); // First of next month
+    const monthEnd = new Date(Date.UTC(year, month, 1));
 
     const todos = await this.todoModel
       .find({ userId, dueDate: { $gte: monthStart, $lt: monthEnd } })
@@ -397,6 +391,23 @@ export class TodoService {
     };
   }
 
+  private buildDaySummary(todos: SafeTodo[]): TodoDaySummary {
+    const total = todos.length;
+    const completed = todos.filter(
+      (t) => t.status === TodoStatus.COMPLETED,
+    ).length;
+    return {
+      total,
+      completed,
+      pending: todos.filter((t) => t.status === TodoStatus.PENDING).length,
+      inProgress: todos.filter((t) => t.status === TodoStatus.IN_PROGRESS)
+        .length,
+      cancelled: todos.filter((t) => t.status === TodoStatus.CANCELLED).length,
+      urgent: todos.filter((t) => t.priority === TodoPriority.URGENT).length,
+      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
+  }
+
   private normalizeDate(dateStr: string): Date {
     const d = new Date(dateStr);
     return new Date(
@@ -404,10 +415,10 @@ export class TodoService {
     );
   }
 
-  /** Get the Monday and the following Monday (exclusive end) of a week */
   private getWeekRange(date: Date): { weekStart: Date; weekEnd: Date } {
     const d = new Date(date);
     const day = d.getUTCDay(); // 0=Sun, 1=Mon, ...
+    console.log('day', day);
     const diffToMonday = day === 0 ? -6 : 1 - day;
     const weekStart = new Date(
       Date.UTC(
@@ -416,12 +427,12 @@ export class TodoService {
         d.getUTCDate() + diffToMonday,
       ),
     );
+    console.log('weekStart', weekStart);
     const weekEnd = new Date(weekStart);
     weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
     return { weekStart, weekEnd };
   }
 
-  /** Build 7 CalendarDay objects from flat todo array */
   private buildWeekDays(weekStart: Date, todos: TodoDocument[]): CalendarDay[] {
     return Array.from({ length: 7 }, (_, i) => {
       const dayDate = new Date(weekStart);
@@ -450,23 +461,6 @@ export class TodoService {
           .length,
       };
     });
-  }
-
-  private buildDaySummary(todos: SafeTodo[]): TodoDaySummary {
-    const total = todos.length;
-    const completed = todos.filter(
-      (t) => t.status === TodoStatus.COMPLETED,
-    ).length;
-    return {
-      total,
-      completed,
-      pending: todos.filter((t) => t.status === TodoStatus.PENDING).length,
-      inProgress: todos.filter((t) => t.status === TodoStatus.IN_PROGRESS)
-        .length,
-      cancelled: todos.filter((t) => t.status === TodoStatus.CANCELLED).length,
-      urgent: todos.filter((t) => t.priority === TodoPriority.URGENT).length,
-      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-    };
   }
 
   private buildWeekSummary(days: CalendarDay[]) {

@@ -14,6 +14,7 @@ import { AppService } from './app.service';
 import { CloudinaryModule } from './services/cloudinary/cloudinary.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TodoModule } from './modules/todo/todo.module';
+import { DailyNotesModule } from './modules/daily-notes/daily-notes.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { TodoModule } from './modules/todo/todo.module';
     CloudinaryModule,
     ProjectsModule,
     TodoModule,
+    DailyNotesModule,
   ],
   controllers: [AppController],
   providers: [
