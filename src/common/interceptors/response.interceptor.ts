@@ -18,30 +18,47 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
-    return next.handle().pipe(
-      map((data: T) => {
-        if (this.isApiResponse(data)) {
-          return data as ApiResponse<T>;
-        }
+    const httpContext = context.switchToHttp();
+    const response = httpContext.getResponse<Response>();
+    const request = httpContext.getRequest<Request>();
 
-        const httpContext = context.switchToHttp();
-        const response = httpContext.getResponse<Response>();
-        const request = httpContext.getRequest<Request>();
-        const statusCode: number = response.statusCode;
-        const path: string = request.url;
+    return next.handle().pipe(
+      map((data: T | ApiResponse<T>) => {
+        const statusCode = response.statusCode;
+        const path = request.originalUrl;
         const timestamp = new Date().toISOString();
 
+        const meta = {
+          statusCode,
+          path,
+          timestamp,
+        };
+
+        // If controller already returned ApiResponse
+        if (this.isApiResponse(data)) {
+          return {
+            ...data,
+            statusCode,
+            meta: {
+              ...(data.meta || {}),
+              ...meta,
+            },
+          };
+        }
+
+        // Otherwise wrap raw data
         return {
+          statusCode,
           success: true,
           message: this.getSuccessMessage(statusCode),
           data,
-          meta: { statusCode, path, timestamp },
+          meta,
         };
       }),
     );
   }
 
-  private isApiResponse(data: unknown): boolean {
+  private isApiResponse(data: unknown): data is ApiResponse<unknown> {
     return (
       data !== null &&
       typeof data === 'object' &&
@@ -55,11 +72,11 @@ export class ResponseInterceptor<T> implements NestInterceptor<
       case 200:
         return 'Request successful';
       case 201:
-         return 'Resource created successfully';
+        return 'Resource created successfully';
       case 204:
-         return 'Request processed successfully';
+        return 'Request processed successfully';
       default:
-          return 'Operation completed successfully';
+        return 'Operation completed successfully';
     }
   }
 }

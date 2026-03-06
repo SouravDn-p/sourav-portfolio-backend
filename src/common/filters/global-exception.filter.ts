@@ -30,7 +30,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const responseObj = exceptionResponse as Record<string, unknown>;
         const raw = responseObj.message;
         if (Array.isArray(raw)) {
@@ -48,6 +51,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     const errorResponse: ApiResponse<null> = {
+      statusCode: status,
       success: false,
       message,
       data: null,
