@@ -1,5 +1,3 @@
-// src/modules/daily-notes/dto/create-daily-note.dto.ts
-
 import {
   IsArray,
   IsBoolean,
